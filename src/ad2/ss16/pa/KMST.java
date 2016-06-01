@@ -1,5 +1,7 @@
 package ad2.ss16.pa;
 
+import org.omg.CORBA.NO_IMPLEMENT;
+
 import java.util.*;
 
 /**
@@ -32,9 +34,9 @@ public class KMST extends AbstractKMST {
 		setSolution(numEdges, edges);
 
 		Graph graph = new Graph();
-
+		int[] asd = new int[99];
 		for (Edge edge:edges) {
-			graph.addEdge(edge);
+			asd
 		}
 	}/*
 		nodes = new HashSet<Integer>();
@@ -96,6 +98,89 @@ public class KMST extends AbstractKMST {
 		}
 	}
 
+	private void prim2(Graph graph){
+		Collection<Node> nodes = graph.getNodes().values();
+		int[] distance = new int[nodes.size()];
+
+		for (Node node: ) {
+
+		}
+	}
+
+	private void hui(Graph graph){
+
+	}
+
+	private void hui(Graph graph, Node node, Set<Integer> visited){
+		Edge minEdge = null;
+
+		for(Edge edge: node.getEdges()){
+			int nextNode = node.getValue() == edge.node1?edge.node1:edge.node2;
+
+			if(!visited.contains(nextNode) && (minEdge == null || edge.weight < minEdge.weight))
+				minEdge = edge;
+		}
+
+		if(minEdge != null){
+			visited.add(node.getValue());
+			Node nextNode = minEdge.node1 == node.value ? graph.getNodes().get(minEdge.node2):graph.getNodes().get(minEdge.node1);
+			hui(graph, nextNode, visited);
+		}
+
+		return;
+	}
+
+	private Graph prim(Graph graph){
+		Queue<Node> visited = new LinkedList<Node>();
+		HashSet<Integer> visitedNodes = new HashSet<Integer>();
+		visited.add(graph.getHead());
+		visitedNodes.add(graph.getHead().getValue());
+
+		return prim(visited,visitedNodes);
+	}
+
+	private Graph prim(Queue<Node> visited,HashSet<Integer> visitedNodes){
+		Graph mst = new Graph();
+		Edge minEdge = null;
+
+		for(Node node : visited){
+			for(Edge edge: node.getEdges()){
+				int nextNode = node.getValue() == edge.node1?edge.node1:edge.node2;
+
+				if(!visitedNodes.contains(nextNode)) {
+					if (minEdge == null)
+						minEdge = edge;
+					else if (edge.weight < minEdge.weight)
+						minEdge = edge;
+				}
+			}
+		}
+
+		if(minEdge != null) {
+			mst.addEdge(minEdge);
+			visited.add(minEdge.node1);
+			visited.add(minEdge.node2);
+		}
+
+		for(Node node: graph.getNodes().values()){
+
+
+			for(Edge edge: node.getEdges()){
+				if(minEdge != null) {
+					minEdge = edge;
+				}
+				else if(edge.weight < minEdge.weight){
+					minEdge = edge;
+				}
+			}
+
+			visited.add(node.getValue());
+		}
+
+		return mst;
+	}
+
+	/*
 	private HashSet<Edge> prim(HashSet<Edge> graph){
 		HashSet<Edge> mst = new HashSet<Edge>();
 		HashSet<Integer> visited = new HashSet<Integer>();
@@ -130,7 +215,7 @@ public class KMST extends AbstractKMST {
 
 
 		return mst;
-	}
+	}*/
 
 	public class Node{
 		private int value;
@@ -149,6 +234,7 @@ public class KMST extends AbstractKMST {
 	public class Graph{
 		private HashMap<Integer,Node> nodes;
 		private HashSet<Edge> edges;
+		private Node head = null;
 
 		public Graph(){
 			this.nodes = new HashMap<Integer, Node>();
@@ -161,12 +247,18 @@ public class KMST extends AbstractKMST {
 			this.edges.add(edge);
 		}
 
+		public HashMap<Integer,Node> getNodes(){return this.nodes;}
+		public Node getHead(){return this.head;}
+
 		private Node addOrGetNode(int value){
 			if(nodes.containsKey(value))
 				return nodes.get(value);
 
 			Node node = new Node(value);
 			nodes.put(value,node);
+
+			if(head == null)
+				head = node;
 
 			return node;
 		}
