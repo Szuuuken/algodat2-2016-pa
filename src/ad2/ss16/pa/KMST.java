@@ -58,16 +58,10 @@ public class KMST extends AbstractKMST {
 	public void run() {
 		Main.printDebug("run " + this.k);
 
-
-		//prim(nodes);
-
 		LinkedList<TreeMap<Integer, HashSet<Edge>>> problems = new LinkedList<TreeMap<Integer, HashSet<Edge>>>();
 		problems.add(nodes);
 
-		int count = 0;
 		while(!problems.isEmpty()){
-			//Main.printDebug(count);
-			count++;
 			TreeMap<Integer, HashSet<Edge>> problem = problems.getFirst();
 			problems.remove(problem);
 
