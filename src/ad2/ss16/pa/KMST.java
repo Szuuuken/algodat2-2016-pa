@@ -44,9 +44,6 @@ public class KMST extends AbstractKMST {
 			else
 				nodes.put(edge.node2,new HashSet<Edge>());
 		}
-
-
-
 	}
 	/**
 	 * Diese Methode bekommt vom Framework maximal 30 Sekunden Zeit zur
@@ -82,10 +79,10 @@ public class KMST extends AbstractKMST {
 				continue;
 			}
 
-			/*if(mst.size() <= this.k || mst.getWeight() < this.getSolution().getUpperBound()) {
+			if(mst.size() <= this.k || mst.getWeight() < this.getSolution().getUpperBound()) {
 				//Main.printDebug("cont2");
 				continue;
-			}*/
+			}
 
 			for(int key: problem.keySet()){
 				TreeMap<Integer, HashSet<Edge>> subProblem = new TreeMap<Integer, HashSet<Edge>>(problem);
@@ -106,7 +103,6 @@ public class KMST extends AbstractKMST {
 		remainingNodes.remove(firstEntry.getKey());
 		int weight = 0;
 
-		//int count = 0;
 		while(!remainingNodes.isEmpty()){ //solange noch unbesuchte Knoten vorhanden sind
 			Edge minEdge = null;
 			boolean newNodeFound = false;
@@ -129,28 +125,18 @@ public class KMST extends AbstractKMST {
 			if(minEdge != null && newNode >= 0){ // falls wir eine kleinste Kante zu einem unbekannten Knoten gefunden haben,
 
 				mst.add(minEdge);//nehmen wir die Kante in unsere lösung auf
-				//Main.printDebug(createNodeName(minEdge));
 				visitedNodes.put(newNode,remainingNodes.get(newNode)); // markieren wir den Neuen Knoten als Besucht
-				//Main.printDebug(visitedNodes.keySet());
 				remainingNodes.remove(newNode); // entfernen wir den neuen Knoten aus den noch zu suchenden Knoten
 				weight+= minEdge.weight;
-				//mstEdgeNames.add(createNodeName(minEdge));
-				//Main.printDebug(count + " " + minEdge.node1 + " " + minEdge.node2 + " " + minEdge.weight);
-				//count++;
-				//Main.printDebug("hä?");
 			}
 
 			if(newNodeFound == false)
 				remainingNodes.clear(); // entfernen wir den neuen Knoten aus den noch zu suchenden Knoten
 		}
 
-		//Main.printDebug(this.k +" "+ mst.size()+1 + " " + weight + " " + this.getSolution().getUpperBound());
-
 		if(this.k <= mst.size()+1  && weight < this.getSolution().getUpperBound()) {
 			this.setSolution(weight, mst);
-			Main.printDebug("newSolution" + mst);
-			//Main.printDebug(mst);
-			//Main.printDebug(graph.keySet());
+			//Main.printDebug("newSolution" + mst);
 		}
 
 
@@ -185,34 +171,5 @@ public class KMST extends AbstractKMST {
 			return edge.node2;
 
 		return edge.node1;
-	}
-
-	private HashSet<Edge> kurskal(HashSet<Edge> edges){
-		Main.printDebug("edges");
-
-		LinkedList<Edge> list = new LinkedList<Edge>(edges);
-		HashSet<Integer> connected = new HashSet<Integer>();
-		HashSet<Edge> mst = new HashSet<Edge>();
-
-		list.sort(new Comparator<Edge>() {
-			@Override
-			public int compare(Edge o1, Edge o2) {
-				return o1.compareTo(o2);
-			}
-		});
-
-		int count = 0;
-		for (Edge edge: list) {
-			if(connected.contains(edge.node1) ^ connected.contains(edge.node2) || connected.isEmpty()){
-				mst.add(edge);
-				connected.add(edge.node1);
-				connected.add(edge.node2);
-				Main.printDebug(count + " " + edge.node1 + " " + edge.node2 + " " + edge.weight);
-				count++;
-			}
-
-		}
-
-		return  mst;
 	}
 }
