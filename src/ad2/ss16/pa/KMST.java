@@ -1,7 +1,5 @@
 package ad2.ss16.pa;
 
-import org.omg.CORBA.NO_IMPLEMENT;
-
 import java.util.*;
 
 /**
@@ -9,12 +7,12 @@ import java.util.*;
  * Ihre L&ouml;sung implementieren.
  */
 public class KMST extends AbstractKMST {
-	private int min = Integer.MIN_VALUE;
-	private int max = Integer.MAX_VALUE;
 	private int k;
-	private ArrayList<HashSet<Edge>> problems = new ArrayList<HashSet<Edge>>();
-	private Set<Integer> nodes;
-	private HashMap<Integer,ArrayList<Edge>> paths;
+	private int numNodes;
+	private TreeMap<Integer,HashSet<Edge>> nodes;
+	private HashSet<Edge> edges;
+
+
 	/**
 	 * Der Konstruktor. Hier ist die richtige Stelle f&uuml;r die
 	 * Initialisierung Ihrer Datenstrukturen.
@@ -30,41 +28,26 @@ public class KMST extends AbstractKMST {
 	 */
 	public KMST(Integer numNodes, Integer numEdges, HashSet<Edge> edges, int k) {
 		this.k = k;
-		problems.add(edges);
-		setSolution(numEdges, edges);
+		this.numNodes = numNodes;
+		this.edges = edges;
+		this.nodes = new TreeMap<Integer, HashSet<Edge>>();
+		this.setSolution(Integer.MAX_VALUE,edges);
 
-		Graph graph = new Graph();
-		int[] asd = new int[99];
-		for (Edge edge:edges) {
-			asd
-		}
-	}/*
-		nodes = new HashSet<Integer>();
-		paths = new HashMap<Integer, ArrayList<Edge>>();
+		for(Edge edge: edges){
+			if(nodes.containsKey(edge.node1))
+				nodes.get(edge.node1).add(edge);
+			else
+				nodes.put(edge.node1,new HashSet<Edge>());
 
-
-		for (Edge edge:edges) {
-			nodes.add(edge.node1);
-			nodes.add(edge.node2);
-
-			if(!paths.containsKey(edge.node1)){
-				paths.put(edge.node1,new ArrayList<Edge>());
-
-			}
-
-			paths.get(edge.node1).add(edge);
-
-			if(!paths.containsKey(edge.node2)){
-				paths.put(edge.node2,new ArrayList<Edge>());
-
-			}
-
-			paths.get(edge.node2).add(edge);
-
+			if(nodes.containsKey(edge.node2))
+				nodes.get(edge.node2).add(edge);
+			else
+				nodes.put(edge.node2,new HashSet<Edge>());
 		}
 
-	}*/
 
+
+	}
 	/**
 	 * Diese Methode bekommt vom Framework maximal 30 Sekunden Zeit zur
 	 * Verf&uuml;gung gestellt um einen g&uuml;ltigen k-MST zu finden.
@@ -76,191 +59,160 @@ public class KMST extends AbstractKMST {
 	 */
 	@Override
 	public void run() {
-		Main.printDebug("run");
+		Main.printDebug("run " + this.k);
 
+
+		//prim(nodes);
+
+		LinkedList<TreeMap<Integer, HashSet<Edge>>> problems = new LinkedList<TreeMap<Integer, HashSet<Edge>>>();
+		problems.add(nodes);
+
+		int count = 0;
 		while(!problems.isEmpty()){
-			HashSet<Edge> subProblem = problems.get(0);
-			problems.remove(0);
+			//Main.printDebug(count);
+			count++;
+			TreeMap<Integer, HashSet<Edge>> problem = problems.getFirst();
+			problems.remove(problem);
 
-			int localMin = 2;
 
-			if(localMin < max){
-				HashSet<Edge> mst = prim(subProblem);
-				int localMax = mst;
+			MST mst = prim(problem);
 
-				if(localMax < max)
-					max = localMax;
-
-				if(localMin < max){
-					for()
-				}
+			if(problem.size() == this.k) {
+				//Main.printDebug("cont1");
+				continue;
 			}
-		}
-	}
 
-	private void prim2(Graph graph){
-		Collection<Node> nodes = graph.getNodes().values();
-		int[] distance = new int[nodes.size()];
+			/*if(mst.size() <= this.k || mst.getWeight() < this.getSolution().getUpperBound()) {
+				//Main.printDebug("cont2");
+				continue;
+			}*/
 
-		for (Node node: ) {
-
-		}
-	}
-
-	private void hui(Graph graph){
-
-	}
-
-	private void hui(Graph graph, Node node, Set<Integer> visited){
-		Edge minEdge = null;
-
-		for(Edge edge: node.getEdges()){
-			int nextNode = node.getValue() == edge.node1?edge.node1:edge.node2;
-
-			if(!visited.contains(nextNode) && (minEdge == null || edge.weight < minEdge.weight))
-				minEdge = edge;
-		}
-
-		if(minEdge != null){
-			visited.add(node.getValue());
-			Node nextNode = minEdge.node1 == node.value ? graph.getNodes().get(minEdge.node2):graph.getNodes().get(minEdge.node1);
-			hui(graph, nextNode, visited);
-		}
-
-		return;
-	}
-
-	private Graph prim(Graph graph){
-		Queue<Node> visited = new LinkedList<Node>();
-		HashSet<Integer> visitedNodes = new HashSet<Integer>();
-		visited.add(graph.getHead());
-		visitedNodes.add(graph.getHead().getValue());
-
-		return prim(visited,visitedNodes);
-	}
-
-	private Graph prim(Queue<Node> visited,HashSet<Integer> visitedNodes){
-		Graph mst = new Graph();
-		Edge minEdge = null;
-
-		for(Node node : visited){
-			for(Edge edge: node.getEdges()){
-				int nextNode = node.getValue() == edge.node1?edge.node1:edge.node2;
-
-				if(!visitedNodes.contains(nextNode)) {
-					if (minEdge == null)
-						minEdge = edge;
-					else if (edge.weight < minEdge.weight)
-						minEdge = edge;
-				}
+			for(int key: problem.keySet()){
+				TreeMap<Integer, HashSet<Edge>> subProblem = new TreeMap<Integer, HashSet<Edge>>(problem);
+				subProblem.remove(key);
+				problems.add(subProblem);
 			}
 		}
 
-		if(minEdge != null) {
-			mst.addEdge(minEdge);
-			visited.add(minEdge.node1);
-			visited.add(minEdge.node2);
-		}
-
-		for(Node node: graph.getNodes().values()){
-
-
-			for(Edge edge: node.getEdges()){
-				if(minEdge != null) {
-					minEdge = edge;
-				}
-				else if(edge.weight < minEdge.weight){
-					minEdge = edge;
-				}
-			}
-
-			visited.add(node.getValue());
-		}
-
-		return mst;
 	}
 
-	/*
-	private HashSet<Edge> prim(HashSet<Edge> graph){
+	private MST prim(TreeMap<Integer, HashSet<Edge>> graph){
 		HashSet<Edge> mst = new HashSet<Edge>();
-		HashSet<Integer> visited = new HashSet<Integer>();
+		TreeMap<Integer,HashSet<Edge>> visitedNodes = new TreeMap<Integer, HashSet<Edge>>();
+		TreeMap<Integer,HashSet<Edge>> remainingNodes = new TreeMap<Integer, HashSet<Edge>>(graph);
 
-		for (int node:nodes) {
-			ArrayList<Edge> edges = paths.get(node);
+		Map.Entry<Integer,HashSet<Edge>> firstEntry = remainingNodes.firstEntry();
+		visitedNodes.put(firstEntry.getKey(),firstEntry.getValue());
+		remainingNodes.remove(firstEntry.getKey());
+		int weight = 0;
 
+		//int count = 0;
+		while(!remainingNodes.isEmpty()){ //solange noch unbesuchte Knoten vorhanden sind
 			Edge minEdge = null;
-			for (Edge edge:edges) {
-				int currentNode = -1;
-				int nextNode = -1;
-				if(edge.node1 == node){
-					currentNode = edge.node1;
-					nextNode = edge.node2;
-				}
+			boolean newNodeFound = false;
+			int newNode = -1;
 
-				if(minEdge == null) {
-					if(!visited.contains(nextNode))
-						minEdge = edge;
-				}
-				else{
-					if(edge.weight < minEdge.weight && !visited.contains(nextNode))
-						minEdge = edge;
+			for(Map.Entry<Integer,HashSet<Edge>> node: visitedNodes.entrySet()){ // suchen den Kante mit dem kleinsten Gewicht, der bereits besuchten Knoten
+				if(node.getValue() != null) {
+					for (Edge edge : node.getValue()) {
+						int nextNode = getNextNode(node.getKey(), edge);
+
+						if (!visitedNodes.containsKey(nextNode) && (graph.containsKey(nextNode)) && (minEdge == null || edge.weight < minEdge.weight)) { // falls wir einen neuen gefunden haben und es sich um die bis jetzt kleinst kante handelt nehmen wir die Kante
+							minEdge = edge;
+							newNode = nextNode;
+							newNodeFound = true;
+						}
+					}
 				}
 			}
 
-			if(minEdge != null)
-				mst.add(minEdge);
+			if(minEdge != null && newNode >= 0){ // falls wir eine kleinste Kante zu einem unbekannten Knoten gefunden haben,
 
-			visited.add(node);
+				mst.add(minEdge);//nehmen wir die Kante in unsere lösung auf
+				//Main.printDebug(createNodeName(minEdge));
+				visitedNodes.put(newNode,remainingNodes.get(newNode)); // markieren wir den Neuen Knoten als Besucht
+				//Main.printDebug(visitedNodes.keySet());
+				remainingNodes.remove(newNode); // entfernen wir den neuen Knoten aus den noch zu suchenden Knoten
+				weight+= minEdge.weight;
+				//mstEdgeNames.add(createNodeName(minEdge));
+				//Main.printDebug(count + " " + minEdge.node1 + " " + minEdge.node2 + " " + minEdge.weight);
+				//count++;
+				//Main.printDebug("hä?");
+			}
+
+			if(newNodeFound == false)
+				remainingNodes.clear(); // entfernen wir den neuen Knoten aus den noch zu suchenden Knoten
+		}
+
+		//Main.printDebug(this.k +" "+ mst.size()+1 + " " + weight + " " + this.getSolution().getUpperBound());
+
+		if(this.k <= mst.size()+1  && weight < this.getSolution().getUpperBound()) {
+			this.setSolution(weight, mst);
+			Main.printDebug("newSolution" + mst);
+			//Main.printDebug(mst);
+			//Main.printDebug(graph.keySet());
 		}
 
 
-		return mst;
-	}*/
-
-	public class Node{
-		private int value;
-		private ArrayList<Edge> edges;
-
-		public Node(int value){
-			this.value = value;
-			edges = new ArrayList<Edge>();
-		}
-
-		public int getValue(){return this.value;}
-		public ArrayList<Edge> getEdges(){return this.edges;}
-		public void addEdge(Edge edge){this.edges.add(edge);}
+		return new MST(mst,weight);
 	}
 
-	public class Graph{
-		private HashMap<Integer,Node> nodes;
+	private class MST {
 		private HashSet<Edge> edges;
-		private Node head = null;
+		private int weight;
 
-		public Graph(){
-			this.nodes = new HashMap<Integer, Node>();
-			this.edges = new HashSet<Edge>();
+		private MST(HashSet<Edge> edges, int weight) {
+			this.edges = edges;
+			this.weight = weight;
 		}
 
-		public void addEdge(Edge edge){
-			addOrGetNode(edge.node1).addEdge(edge);
-			addOrGetNode(edge.node2).addEdge(edge);
-			this.edges.add(edge);
+
+		public HashSet<Edge> getEdges() {
+			return edges;
 		}
 
-		public HashMap<Integer,Node> getNodes(){return this.nodes;}
-		public Node getHead(){return this.head;}
-
-		private Node addOrGetNode(int value){
-			if(nodes.containsKey(value))
-				return nodes.get(value);
-
-			Node node = new Node(value);
-			nodes.put(value,node);
-
-			if(head == null)
-				head = node;
-
-			return node;
+		public int getWeight() {
+			return weight;
 		}
+
+		public int size(){
+			return edges.size()+1;
+		}
+	}
+
+	private int getNextNode(int node, Edge edge){
+		if(node == edge.node1)
+			return edge.node2;
+
+		return edge.node1;
+	}
+
+	private HashSet<Edge> kurskal(HashSet<Edge> edges){
+		Main.printDebug("edges");
+
+		LinkedList<Edge> list = new LinkedList<Edge>(edges);
+		HashSet<Integer> connected = new HashSet<Integer>();
+		HashSet<Edge> mst = new HashSet<Edge>();
+
+		list.sort(new Comparator<Edge>() {
+			@Override
+			public int compare(Edge o1, Edge o2) {
+				return o1.compareTo(o2);
+			}
+		});
+
+		int count = 0;
+		for (Edge edge: list) {
+			if(connected.contains(edge.node1) ^ connected.contains(edge.node2) || connected.isEmpty()){
+				mst.add(edge);
+				connected.add(edge.node1);
+				connected.add(edge.node2);
+				Main.printDebug(count + " " + edge.node1 + " " + edge.node2 + " " + edge.weight);
+				count++;
+			}
+
+		}
+
+		return  mst;
 	}
 }
