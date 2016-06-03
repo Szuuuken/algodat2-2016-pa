@@ -10,8 +10,9 @@ public class KMST extends AbstractKMST {
 	private int k;
 	private int numNodes;
 	private int globalLowerBound = Integer.MIN_VALUE;
-	private TreeMap<Integer,TreeSet<Edge>> nodes;
-	private HashSet<Edge> edges;
+	private Problem mainProblem;
+	//private TreeMap<Integer,TreeSet<Edge>> nodes;
+	//private HashSet<Edge> edges;
 
 
 	/**
@@ -30,22 +31,20 @@ public class KMST extends AbstractKMST {
 	public KMST(Integer numNodes, Integer numEdges, HashSet<Edge> edges, int k) {
 		this.k = k;
 		this.numNodes = numNodes;
-		this.edges = edges;
-		this.nodes = new TreeMap<Integer, TreeSet<Edge>>();
+		//this.edges = edges;
+		//this.nodes = new TreeMap<Integer, TreeSet<Edge>>();
 		this.setSolution(Integer.MAX_VALUE,edges);
+		this.mainProblem = new Problem();
+
 
 		for(Edge edge: edges){
-			if(nodes.containsKey(edge.node1))
-				nodes.get(edge.node1).add(edge);
-			else
-				nodes.put(edge.node1,new TreeSet<Edge>());
-
-			if(nodes.containsKey(edge.node2))
-				nodes.get(edge.node2).add(edge);
-			else
-				nodes.put(edge.node2,new TreeSet<Edge>());
+			this.mainProblem.addNode(edge.node1,edge);
+			this.mainProblem.addNode(edge.node2,edge);
 		}
 	}
+
+
+
 	/**
 	 * Diese Methode bekommt vom Framework maximal 30 Sekunden Zeit zur
 	 * Verf&uuml;gung gestellt um einen g&uuml;ltigen k-MST zu finden.
@@ -59,51 +58,41 @@ public class KMST extends AbstractKMST {
 	public void run() {
 		Main.printDebug("run " + this.k);
 
-		LinkedList<TreeMap<Integer, TreeSet<Edge>>> problems = new LinkedList<TreeMap<Integer, TreeSet<Edge>>>();
-		problems.add(nodes);
+		LinkedList<Problem> problems = new LinkedList<Problem>();
+		problems.add(mainProblem);
 
 		while(!problems.isEmpty()){
-			TreeMap<Integer, TreeSet<Edge>> problem = problems.getFirst();
+			Problem problem = problems.getFirst();
 			problems.remove(problem);
 
-			MST mst = prim(problem);
+			int localLowerBound = calcLowerBound(problem.edges);
 
-			if(mst.getWeight() > this.globalLowerBound){
-				int localLowerBound = calcLowerBound(mst.getEdges());
+			if(localLowerBound < this.getSolution().getUpperBound()){
+				MST mst = prim(problem);
 
-				if(localLowerBound > this.globalLowerBound){
-					this.globalLowerBound =
+				int localUpperBound = mst.getWeight();
+
+				if(localUpperBound < this.getSolution().getUpperBound() && mst.size()+1 >= 4 && problem.nodes.size() >= 4) {
+					this.setSolution(mst.getWeight(), mst.edges);
 				}
-			}
 
-
-
-
-
-			if(localLowerBound > this.globalLowerBound)
-				globalLowerBound = localLowerBound;
-
-
-			if(problem.size() == this.k) {
-				//Main.printDebug("cont1");
-				continue;
-			}
-
-			if(mst.size() <= this.k || mst.getWeight() < this.getSolution().getUpperBound()) {
-				//Main.printDebug("cont2");
-				continue;
-			}
-
-			for(int key: problem.keySet()){
-				TreeMap<Integer, TreeSet<Edge>> subProblem = new TreeMap<Integer, TreeSet<Edge>>(problem);
-				subProblem.remove(key);
-				problems.add(subProblem);
+				if(localLowerBound < this.getSolution().getUpperBound() && problem.nodes.size() > 4){
+					for(int key: problem.nodes.keySet()){
+						Problem subProblem = new Problem(problem);
+						subProblem.removeNode(key);
+						problems.add(subProblem);
+					}
+				}
 			}
 		}
 
 	}
 
+
+
 	public int calcLowerBound(TreeSet<Edge> edges){
+		if(edges.size() < 4) return Integer.MAX_VALUE;
+
 		int weight = 0;
 		Iterator<Edge> it = edges.iterator();
 
@@ -115,10 +104,10 @@ public class KMST extends AbstractKMST {
 
 	}
 
-	private MST prim(TreeMap<Integer, TreeSet<Edge>> graph){
+	private MST prim(Problem graph){
 		TreeSet<Edge> mst = new TreeSet<Edge>();
 		TreeMap<Integer,TreeSet<Edge>> visitedNodes = new TreeMap<Integer, TreeSet<Edge>>();
-		TreeMap<Integer,TreeSet<Edge>> remainingNodes = new TreeMap<Integer, TreeSet<Edge>>(graph);
+		TreeMap<Integer,TreeSet<Edge>> remainingNodes = new TreeMap<Integer, TreeSet<Edge>>(graph.nodes);
 
 		Map.Entry<Integer,TreeSet<Edge>> firstEntry = remainingNodes.firstEntry();
 		visitedNodes.put(firstEntry.getKey(),firstEntry.getValue());
@@ -129,15 +118,17 @@ public class KMST extends AbstractKMST {
 			Edge minEdge = null;
 			boolean newNodeFound = false;
 			int newNode = -1;
+			int oldNode = -1;
 
 			for(Map.Entry<Integer,TreeSet<Edge>> node: visitedNodes.entrySet()){ // suchen den Kante mit dem kleinsten Gewicht, der bereits besuchten Knoten
 				if(node.getValue() != null) {
 					for (Edge edge : node.getValue()) {
 						int nextNode = getNextNode(node.getKey(), edge);
 
-						if (!visitedNodes.containsKey(nextNode) && (graph.containsKey(nextNode)) && (minEdge == null || edge.weight < minEdge.weight)) { // falls wir einen neuen gefunden haben und es sich um die bis jetzt kleinst kante handelt nehmen wir die Kante
+						if (!visitedNodes.containsKey(nextNode) && (graph.nodes.containsKey(nextNode)) && (minEdge == null || edge.weight < minEdge.weight)) { // falls wir einen neuen gefunden haben und es sich um die bis jetzt kleinst kante handelt nehmen wir die Kante
 							minEdge = edge;
 							newNode = nextNode;
+							oldNode = node.getKey();
 							newNodeFound = true;
 						}
 					}
@@ -147,20 +138,25 @@ public class KMST extends AbstractKMST {
 			if(minEdge != null && newNode >= 0){ // falls wir eine kleinste Kante zu einem unbekannten Knoten gefunden haben,
 
 				mst.add(minEdge);//nehmen wir die Kante in unsere lösung auf
+
+				if(remainingNodes.containsKey(oldNode) && remainingNodes.get(oldNode).contains(minEdge))
+					remainingNodes.get(oldNode).remove(minEdge);
+
+				/*if(remainingNodes.containsKey(newNode) && remainingNodes.get(newNode).contains(minEdge))
+					remainingNodes.get(newNode).remove(minEdge);*/
+
 				visitedNodes.put(newNode,remainingNodes.get(newNode)); // markieren wir den Neuen Knoten als Besucht
 				remainingNodes.remove(newNode); // entfernen wir den neuen Knoten aus den noch zu suchenden Knoten
 				weight+= minEdge.weight;
+				//visitedNodes.get(newNode).removeAll(mst);
+				///visitedNodes.get(oldNode).removeAll(mst);
+				//visitedNodes.get(newNode).remove(minEdge);
+				//visitedNodes.get(oldNode).remove(minEdge);
 			}
 
 			if(newNodeFound == false)
 				remainingNodes.clear(); // entfernen wir den neuen Knoten aus den noch zu suchenden Knoten
 		}
-
-		if(this.k <= mst.size()+1  && weight < this.getSolution().getUpperBound()) {
-			this.setSolution(weight, mst);
-			//Main.printDebug("newSolution" + mst);
-		}
-
 
 		return new MST(mst,weight);
 	}
@@ -193,5 +189,43 @@ public class KMST extends AbstractKMST {
 			return edge.node2;
 
 		return edge.node1;
+	}
+
+	private class Problem{
+		TreeMap<Integer, TreeSet<Edge>> nodes;
+		TreeSet<Edge> edges;
+
+		public Problem(TreeMap<Integer, TreeSet<Edge>> nodes,TreeSet edges){
+			this.nodes= nodes;
+			this.edges = edges;
+		}
+
+		public Problem(Problem problem){
+			this.nodes = new TreeMap<Integer, TreeSet<Edge>>(problem.nodes);
+			this.edges = new TreeSet<Edge>(problem.edges);
+		}
+
+		public Problem(){
+			this.nodes = new TreeMap<Integer, TreeSet<Edge>>();
+			this.edges = new TreeSet<Edge>();
+		}
+
+		public void addNode(int node, Edge edge){
+			if(!this.nodes.containsKey(node)) {
+				TreeSet<Edge> nodeEdges = new TreeSet<Edge>();
+				nodeEdges.add(edge);
+				this.nodes.put(node, nodeEdges);
+			}else{
+				this.nodes.get(node).add(edge);
+			}
+
+			this.edges.add(edge);
+		}
+
+		public void removeNode(int node) {
+			TreeSet<Edge> nodeEdges = nodes.get(node);
+			nodes.remove(node);
+			edges.removeAll(nodeEdges);
+		}
 	}
 }
