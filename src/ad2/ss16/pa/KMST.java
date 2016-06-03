@@ -9,7 +9,8 @@ import java.util.*;
 public class KMST extends AbstractKMST {
 	private int k;
 	private int numNodes;
-	private TreeMap<Integer,HashSet<Edge>> nodes;
+	private int globalLowerBound = Integer.MIN_VALUE;
+	private TreeMap<Integer,TreeSet<Edge>> nodes;
 	private HashSet<Edge> edges;
 
 
@@ -30,19 +31,19 @@ public class KMST extends AbstractKMST {
 		this.k = k;
 		this.numNodes = numNodes;
 		this.edges = edges;
-		this.nodes = new TreeMap<Integer, HashSet<Edge>>();
+		this.nodes = new TreeMap<Integer, TreeSet<Edge>>();
 		this.setSolution(Integer.MAX_VALUE,edges);
 
 		for(Edge edge: edges){
 			if(nodes.containsKey(edge.node1))
 				nodes.get(edge.node1).add(edge);
 			else
-				nodes.put(edge.node1,new HashSet<Edge>());
+				nodes.put(edge.node1,new TreeSet<Edge>());
 
 			if(nodes.containsKey(edge.node2))
 				nodes.get(edge.node2).add(edge);
 			else
-				nodes.put(edge.node2,new HashSet<Edge>());
+				nodes.put(edge.node2,new TreeSet<Edge>());
 		}
 	}
 	/**
@@ -58,15 +59,30 @@ public class KMST extends AbstractKMST {
 	public void run() {
 		Main.printDebug("run " + this.k);
 
-		LinkedList<TreeMap<Integer, HashSet<Edge>>> problems = new LinkedList<TreeMap<Integer, HashSet<Edge>>>();
+		LinkedList<TreeMap<Integer, TreeSet<Edge>>> problems = new LinkedList<TreeMap<Integer, TreeSet<Edge>>>();
 		problems.add(nodes);
 
 		while(!problems.isEmpty()){
-			TreeMap<Integer, HashSet<Edge>> problem = problems.getFirst();
+			TreeMap<Integer, TreeSet<Edge>> problem = problems.getFirst();
 			problems.remove(problem);
 
-
 			MST mst = prim(problem);
+
+			if(mst.getWeight() > this.globalLowerBound){
+				int localLowerBound = calcLowerBound(mst.getEdges());
+
+				if(localLowerBound > this.globalLowerBound){
+					this.globalLowerBound =
+				}
+			}
+
+
+
+
+
+			if(localLowerBound > this.globalLowerBound)
+				globalLowerBound = localLowerBound;
+
 
 			if(problem.size() == this.k) {
 				//Main.printDebug("cont1");
@@ -79,7 +95,7 @@ public class KMST extends AbstractKMST {
 			}
 
 			for(int key: problem.keySet()){
-				TreeMap<Integer, HashSet<Edge>> subProblem = new TreeMap<Integer, HashSet<Edge>>(problem);
+				TreeMap<Integer, TreeSet<Edge>> subProblem = new TreeMap<Integer, TreeSet<Edge>>(problem);
 				subProblem.remove(key);
 				problems.add(subProblem);
 			}
@@ -87,12 +103,24 @@ public class KMST extends AbstractKMST {
 
 	}
 
-	private MST prim(TreeMap<Integer, HashSet<Edge>> graph){
-		HashSet<Edge> mst = new HashSet<Edge>();
-		TreeMap<Integer,HashSet<Edge>> visitedNodes = new TreeMap<Integer, HashSet<Edge>>();
-		TreeMap<Integer,HashSet<Edge>> remainingNodes = new TreeMap<Integer, HashSet<Edge>>(graph);
+	public int calcLowerBound(TreeSet<Edge> edges){
+		int weight = 0;
+		Iterator<Edge> it = edges.iterator();
 
-		Map.Entry<Integer,HashSet<Edge>> firstEntry = remainingNodes.firstEntry();
+		for(int i = 0; i < 4; i++){
+			weight+= it.next().weight;
+		}
+
+		return weight;
+
+	}
+
+	private MST prim(TreeMap<Integer, TreeSet<Edge>> graph){
+		TreeSet<Edge> mst = new TreeSet<Edge>();
+		TreeMap<Integer,TreeSet<Edge>> visitedNodes = new TreeMap<Integer, TreeSet<Edge>>();
+		TreeMap<Integer,TreeSet<Edge>> remainingNodes = new TreeMap<Integer, TreeSet<Edge>>(graph);
+
+		Map.Entry<Integer,TreeSet<Edge>> firstEntry = remainingNodes.firstEntry();
 		visitedNodes.put(firstEntry.getKey(),firstEntry.getValue());
 		remainingNodes.remove(firstEntry.getKey());
 		int weight = 0;
@@ -102,7 +130,7 @@ public class KMST extends AbstractKMST {
 			boolean newNodeFound = false;
 			int newNode = -1;
 
-			for(Map.Entry<Integer,HashSet<Edge>> node: visitedNodes.entrySet()){ // suchen den Kante mit dem kleinsten Gewicht, der bereits besuchten Knoten
+			for(Map.Entry<Integer,TreeSet<Edge>> node: visitedNodes.entrySet()){ // suchen den Kante mit dem kleinsten Gewicht, der bereits besuchten Knoten
 				if(node.getValue() != null) {
 					for (Edge edge : node.getValue()) {
 						int nextNode = getNextNode(node.getKey(), edge);
@@ -138,16 +166,16 @@ public class KMST extends AbstractKMST {
 	}
 
 	private class MST {
-		private HashSet<Edge> edges;
+		private TreeSet<Edge> edges;
 		private int weight;
 
-		private MST(HashSet<Edge> edges, int weight) {
+		private MST(TreeSet<Edge> edges, int weight) {
 			this.edges = edges;
 			this.weight = weight;
 		}
 
 
-		public HashSet<Edge> getEdges() {
+		public TreeSet<Edge> getEdges() {
 			return edges;
 		}
 
