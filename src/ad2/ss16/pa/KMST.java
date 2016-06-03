@@ -73,10 +73,13 @@ public class KMST extends AbstractKMST {
 				int localUpperBound = mst.getWeight();
 
 				if(localUpperBound < this.getSolution().getUpperBound() && mst.size()+1 >= 4 && problem.nodes.size() >= 4) {
-					this.setSolution(mst.getWeight(), mst.edges);
+					this.setSolution(localUpperBound, mst.edges);
 				}
 
 				if(localLowerBound < this.getSolution().getUpperBound() && problem.nodes.size() > 4){
+					Problem subProblem1 = new Problem(problem);
+					Problem subProblem2 = new Problem(problem);
+					
 					for(int key: problem.nodes.keySet()){
 						Problem subProblem = new Problem(problem);
 						subProblem.removeNode(key);
@@ -85,10 +88,7 @@ public class KMST extends AbstractKMST {
 				}
 			}
 		}
-
 	}
-
-
 
 	public int calcLowerBound(TreeSet<Edge> edges){
 		if(edges.size() < 4) return Integer.MAX_VALUE;
@@ -96,12 +96,10 @@ public class KMST extends AbstractKMST {
 		int weight = 0;
 		Iterator<Edge> it = edges.iterator();
 
-		for(int i = 0; i < 4; i++){
+		for(int i = 0; i < 4; i++)
 			weight+= it.next().weight;
-		}
 
 		return weight;
-
 	}
 
 	private MST prim(Problem graph){
@@ -148,10 +146,6 @@ public class KMST extends AbstractKMST {
 				visitedNodes.put(newNode,remainingNodes.get(newNode)); // markieren wir den Neuen Knoten als Besucht
 				remainingNodes.remove(newNode); // entfernen wir den neuen Knoten aus den noch zu suchenden Knoten
 				weight+= minEdge.weight;
-				//visitedNodes.get(newNode).removeAll(mst);
-				///visitedNodes.get(oldNode).removeAll(mst);
-				//visitedNodes.get(newNode).remove(minEdge);
-				//visitedNodes.get(oldNode).remove(minEdge);
 			}
 
 			if(newNodeFound == false)
@@ -166,13 +160,8 @@ public class KMST extends AbstractKMST {
 		private int weight;
 
 		private MST(TreeSet<Edge> edges, int weight) {
-			this.edges = edges;
 			this.weight = weight;
-		}
-
-
-		public TreeSet<Edge> getEdges() {
-			return edges;
+			this.edges = edges;
 		}
 
 		public int getWeight() {
@@ -194,11 +183,6 @@ public class KMST extends AbstractKMST {
 	private class Problem{
 		TreeMap<Integer, TreeSet<Edge>> nodes;
 		TreeSet<Edge> edges;
-
-		public Problem(TreeMap<Integer, TreeSet<Edge>> nodes,TreeSet edges){
-			this.nodes= nodes;
-			this.edges = edges;
-		}
 
 		public Problem(Problem problem){
 			this.nodes = new TreeMap<Integer, TreeSet<Edge>>(problem.nodes);
