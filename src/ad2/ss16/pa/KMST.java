@@ -43,8 +43,6 @@ public class KMST extends AbstractKMST {
 		}
 	}
 
-
-
 	/**
 	 * Diese Methode bekommt vom Framework maximal 30 Sekunden Zeit zur
 	 * Verf&uuml;gung gestellt um einen g&uuml;ltigen k-MST zu finden.
@@ -61,6 +59,20 @@ public class KMST extends AbstractKMST {
 		LinkedList<Problem> problems = new LinkedList<Problem>();
 		problems.add(mainProblem);
 		HashSet<String> testedSoultions = new HashSet<String>();
+
+		Problem firstProblem = new Problem();
+		//mainProblem.ad
+
+
+		/*Iterator<Edge> edgeIterator = this.mainProblem.edges.iterator();
+		while(firstProblem.nodes.size() < this.k){
+			Edge edge = edgeIterator.next();
+
+			if(firstProblem.nodes.containsKey(edge.node1) ^ firstProblem.nodes.containsKey(edge.node2) || (!firstProblem.nodes.containsKey(edge.node1) && !firstProblem.nodes.containsKey(edge.node2)))
+				firstProblem.addEdge(edge);
+		}
+
+		problems.add(firstProblem);*/
 
 		while(!problems.isEmpty()){
 			Problem problem = problems.getFirst();
@@ -86,6 +98,7 @@ public class KMST extends AbstractKMST {
 					while(it.hasNext()){
 						Problem subProblem = new Problem(problem);
 						subProblem.removeNode(it.next());
+
 						if(!testedSoultions.contains(subProblem.nodes.keySet().toString()) && calcLowerBound(subProblem) < this.getSolution().getUpperBound()) {
 							problems.add(subProblem);
 							testedSoultions.add(subProblem.nodes.keySet().toString());
@@ -240,6 +253,11 @@ public class KMST extends AbstractKMST {
 			}
 
 			this.edges.add(edge);
+		}
+
+		public void addEdge(Edge edge){
+			addNode(edge.node1,edge);
+			addNode(edge.node2,edge);
 		}
 
 		public void removeNode(int node) {
