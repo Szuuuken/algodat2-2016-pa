@@ -57,7 +57,7 @@ public class KMST extends AbstractKMST {
 		problems.add(mainProblem);
 		//HashSet<String> testedSoultions = new HashSet<String>();
 
-		Problem firstProblem = new Problem();
+		//Problem firstProblem = new Problem();
 		//mainProblem.ad
 
 
@@ -69,7 +69,7 @@ public class KMST extends AbstractKMST {
 				firstProblem.addEdge(edge);
 		}*/
 
-		problems.add(firstProblem);
+		//problems.add(firstProblem);
 
 		while(!problems.isEmpty()){
 			Problem problem = problems.getFirst();
