@@ -36,7 +36,6 @@ public class KMST extends AbstractKMST {
 		this.setSolution(Integer.MAX_VALUE,edges);
 		this.mainProblem = new Problem();
 
-
 		for(Edge edge: edges){
 			this.mainProblem.addNode(edge.node1,edge);
 			this.mainProblem.addNode(edge.node2,edge);
@@ -54,11 +53,9 @@ public class KMST extends AbstractKMST {
 	 */
 	@Override
 	public void run() {
-		Main.printDebug("run " + this.k);
-
 		LinkedList<Problem> problems = new LinkedList<Problem>();
 		problems.add(mainProblem);
-		HashSet<String> testedSoultions = new HashSet<String>();
+		//HashSet<String> testedSoultions = new HashSet<String>();
 
 		Problem firstProblem = new Problem();
 		//mainProblem.ad
@@ -70,9 +67,9 @@ public class KMST extends AbstractKMST {
 
 			if(firstProblem.nodes.containsKey(edge.node1) ^ firstProblem.nodes.containsKey(edge.node2) || (!firstProblem.nodes.containsKey(edge.node1) && !firstProblem.nodes.containsKey(edge.node2)))
 				firstProblem.addEdge(edge);
-		}
+		}*/
 
-		problems.add(firstProblem);*/
+		problems.add(firstProblem);
 
 		while(!problems.isEmpty()){
 			Problem problem = problems.getFirst();
@@ -88,11 +85,30 @@ public class KMST extends AbstractKMST {
 					continue;
 				}
 
-				if(localUpperBound < this.getSolution().getUpperBound() && mst.size() >= this.k && problem.nodes.size() >= this.k) {
+				if(localUpperBound < this.getSolution().getUpperBound() && mst.size() >= this.k /*&& problem.nodes.size() >= this.k*/) {
 					this.setSolution(localUpperBound, mst.edges);
 				}
 
 				if(localLowerBound < this.getSolution().getUpperBound() && problem.nodes.size() > this.k){
+					Problem subproblem1 = new Problem(problem);
+
+					int node = problem.getFreeNode();
+					if(node != -1) {
+						subproblem1.removeNode(node);
+						problem.fixed.add(node);
+						problems.add(subproblem1);
+						problems.add(problem);
+					}
+
+/*					for(Edge edge: problem.edges){
+						if(problem.edges.last().node1 != edge.node1 && problem.edges.last().node1 != edge.node2)
+							subproblem1.addEdge(edge);
+						if(problem.edges.last().node1 != edge.node2 && problem.edges.last().node2 != edge.node2)
+							subproblem2.addEdge(edge);
+					}
+*/
+
+/*
 					Iterator<Integer> it = problem.nodes.keySet().iterator();
 
 					while(it.hasNext()){
@@ -103,24 +119,22 @@ public class KMST extends AbstractKMST {
 							problems.add(subProblem);
 							testedSoultions.add(subProblem.nodes.keySet().toString());
 						}
-					}
+					}*/
 				}
 			}
 		}
 	}
 
 	public int calcLowerBound(Problem problem){
-		if(problem.nodes.size() < this.k || problem.edges.size()+1 < this.k) return Integer.MAX_VALUE;
+		//if(problem.nodes.size() < this.k || problem.edges.size()+1 < this.k) return Integer.MAX_VALUE;
+
+		if(problem.edges.size() < this.k-1) return Integer.MAX_VALUE;
 
 		int weight = 0;
 		Iterator<Edge> it = problem.edges.iterator();
 
 		for(int i = 0; i < this.k-1; i++) {
-			if(it.hasNext()) {
-				Edge edge = it.next();
-				weight += edge.weight;
-			} else
-				return Integer.MAX_VALUE;
+			weight += it.next().weight;
 		}
 
 		return weight;
@@ -132,8 +146,8 @@ public class KMST extends AbstractKMST {
 		TreeMap<Integer,TreeSet<Edge>> remainingNodes = new TreeMap<Integer, TreeSet<Edge>>(graph.nodes);
 
 		Map.Entry<Integer,TreeSet<Edge>> firstEntry = remainingNodes.firstEntry();
-		visitedNodes.put(firstEntry.getKey(),firstEntry.getValue());
-		remainingNodes.remove(firstEntry.getKey());
+		visitedNodes.put(firstEntry.getKey(),remainingNodes.remove(firstEntry.getKey()));
+
 		int weight = 0;
 
 		while(!remainingNodes.isEmpty()){ //solange noch unbesuchte Knoten vorhanden sind
@@ -143,21 +157,23 @@ public class KMST extends AbstractKMST {
 			int oldNode = -1;
 
 			for(Map.Entry<Integer,TreeSet<Edge>> node: visitedNodes.entrySet()){ // suchen den Kante mit dem kleinsten Gewicht, der bereits besuchten Knoten
-				if(node.getValue() != null) {
-					for (Edge edge : node.getValue()) {
-						int nextNode = getNextNode(node.getKey(), edge);
+				int key = node.getKey();
+				TreeSet<Edge> edgeTreeSet = node.getValue();
+				if(edgeTreeSet != null) {
+					for (Edge edge : edgeTreeSet) {
+						int nextNode = getNextNode(key, edge);
 
 						if (!visitedNodes.containsKey(nextNode) && (graph.nodes.containsKey(nextNode)) && (minEdge == null || edge.weight < minEdge.weight)) { // falls wir einen neuen gefunden haben und es sich um die bis jetzt kleinst kante handelt nehmen wir die Kante
 							minEdge = edge;
 							newNode = nextNode;
-							oldNode = node.getKey();
+							oldNode = key;
 							newNodeFound = true;
 						}
 					}
 				}
 			}
 
-			if(minEdge != null && newNode >= 0){ // falls wir eine kleinste Kante zu einem unbekannten Knoten gefunden haben,
+			if(minEdge != null && newNodeFound){ // falls wir eine kleinste Kante zu einem unbekannten Knoten gefunden haben,
 
 				mst.add(minEdge);//nehmen wir die Kante in unsere lösung auf
 
@@ -172,11 +188,11 @@ public class KMST extends AbstractKMST {
 				weight+= minEdge.weight;
 			}
 
-			if(!newNodeFound)
+			else if(!newNodeFound)
 				remainingNodes.clear(); // entfernen wir den neuen Knoten aus den noch zu suchenden Knoten
 		}
 
-		if(mst.size()+1 < graph.nodes.size() && graph.nodes.size() >= this.k){
+		/*if(mst.size()+1 < graph.nodes.size() && graph.nodes.size() >= this.k){
 			Problem  prob = new Problem(graph);
 
 			for(int nodeValue : visitedNodes.keySet()){
@@ -186,7 +202,7 @@ public class KMST extends AbstractKMST {
 			if(prob.nodes.size() > 0) {
 				return prim(prob);
 			}
-		}
+		}*/
 
 		return new MST(mst,weight);
 	}
@@ -217,6 +233,7 @@ public class KMST extends AbstractKMST {
 	}
 
 	private class Problem{
+		TreeSet<Integer> fixed = new TreeSet<Integer>();
 		TreeMap<Integer, TreeSet<Edge>> nodes;
 		TreeSet<Edge> edges;
 
@@ -234,6 +251,7 @@ public class KMST extends AbstractKMST {
 		}
 
 		public Problem(Problem problem){
+			this.fixed = new TreeSet<Integer>(problem.fixed);
 			this.nodes = new TreeMap<Integer, TreeSet<Edge>>(problem.nodes);
 			this.edges = new TreeSet<Edge>(problem.edges);
 		}
@@ -258,6 +276,15 @@ public class KMST extends AbstractKMST {
 		public void addEdge(Edge edge){
 			addNode(edge.node1,edge);
 			addNode(edge.node2,edge);
+		}
+
+		public int getFreeNode(){
+			for(int maybeNode : this.nodes.keySet()){
+				if(!fixed.contains(maybeNode))
+					return maybeNode;
+			}
+
+			return -1;
 		}
 
 		public void removeNode(int node) {
