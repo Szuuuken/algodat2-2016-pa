@@ -9,10 +9,7 @@ import java.util.*;
 public class KMST extends AbstractKMST {
 	private int k;
 	private int numNodes;
-	//private int globalLowerBound = Integer.MIN_VALUE;
 	private Problem mainProblem;
-	//private TreeMap<Integer,TreeSet<Edge>> nodes;
-	//private HashSet<Edge> edges;
 
 
 	/**
@@ -51,68 +48,113 @@ public class KMST extends AbstractKMST {
 	 */
 	@Override
 	public void run() {
-		LinkedList<Problem> problems = new LinkedList<Problem>();
-		problems.add(mainProblem);
+		Edge firstEdge = mainProblem.edges.first();
+		mainProblem.fixed.add(firstEdge);
+		bnb(mainProblem,firstEdge);
 
-		while(!problems.isEmpty()){
-			Problem problem = problems.getFirst();
-			problems.remove(problem);
+		Problem subProblem = new Problem(mainProblem);
+		subProblem.remove(firstEdge);
+		subProblem.unselected.add(firstEdge);
+		bnb(subProblem,firstEdge);
+	}
 
-			if(problem.alreadyDone){
-				if(problem.lower < this.getSolution().getUpperBound()){
-					int node = problem.getFreeNode();
-					if(node >= 0) {
-						Problem subProblem = new Problem(problem);
-						subProblem.removeNode(node);
-						problem.fixed.add(node);
+	//private Edge getNextEdge();
 
-						problems.add(subProblem);
-						problems.add(problem);
-					}
-				}
+	private void bnb(TreeSet<Edge> edges, TreeMap<Integer,TreeSet<Edge>> nodes, TreeSet<Edge> selected, TreeSet<Edge> unselected){
+		int localLowerBound = calcLowerBound(edges);
+
+		if(localLowerBound < this.getSolution().getUpperBound()){
+			Problem mstProb = new Problem();
+			mstProb.edges = edges;
+			mstProb.nodes = nodes;
+			MST mst = prim(mstProb);
+
+			int localUpperBound = mst.weight;
+
+			if(localUpperBound < this.getSolution().getUpperBound()){
+				this.setSolution(localUpperBound,edges);
 			}
-			else{
-				int localLowerBound = calcLowerBound(problem);
 
-				if(localLowerBound < this.getSolution().getUpperBound()) {
-					MST mst = prim(problem);
+			if(localLowerBound < this.getSolution().getUpperBound()) {
+				//Edge nextEdge = getNextEdge();
+			}
+		}
+	}
 
-					int localUpperBound = mst.weight;
-					if (localUpperBound == 0) {
-						continue;
-					}
+	private void bnb(Problem problem, Edge lastEdge){
+		int localLowerBound = calcLowerBound(problem);
 
-					if (localUpperBound < this.getSolution().getUpperBound() && mst.size() >= this.k /*&& problem.nodes.size() >= this.k*/) {
-						this.setSolution(localUpperBound, mst.edges);
-					}
+		if(localLowerBound < this.getSolution().getUpperBound()) {
+			MST mst = prim(problem);
 
-					if (localLowerBound < this.getSolution().getUpperBound() && problem.nodes.size() > this.k) {
-						Problem subproblem1 = new Problem(problem);
+			int localUpperBound = mst.weight;
+			/*if (localLowerBound == 0) {
+				problem.unselected.add(lastEdge);
+				return;
+			}*/
 
-						int node = problem.getFreeNode();
-						if (node != -1) {
-							subproblem1.removeNode(node);
-							problem.fixed.add(node);
-							problem.alreadyDone = true;
-							problem.upper = localUpperBound;
-							problem.lower = localLowerBound;
+			if (localUpperBound < this.getSolution().getUpperBound())
+				this.setSolution(localUpperBound, problem.edges);
 
-							problems.add(subproblem1);
-							problems.add(problem);
-						}
-					}
+			if (localLowerBound < this.getSolution().getUpperBound()) {
+				Edge nextEdge = getNextEdge(problem, lastEdge);
+				if(nextEdge != null) {
+					Problem problem2 = new Problem(problem);
+					problem2.fixed.add(nextEdge);
+					bnb(problem2,nextEdge);
+
+					Problem problem1 = new Problem(problem);
+					problem1.unselected.add(nextEdge);
+					problem1.remove(nextEdge);
+					bnb(problem1,nextEdge);
 				}
 			}
 		}
 	}
 
-	public int calcLowerBound(Problem problem){
+	private Edge getNextEdge(Problem problem, Edge lastEdge){
+		TreeSet<Edge> possilbeEdges = new TreeSet<Edge>();
+
+		if(problem.nodes.containsKey(lastEdge.node1)) {
+			for (Edge edge : problem.nodes.get(lastEdge.node1)) {
+				if(!problem.fixed.contains(edge) && !problem.unselected.contains(edge))
+					possilbeEdges.add(edge);
+			}
+		}
+
+		if(problem.nodes.containsKey(lastEdge.node2)) {
+			for (Edge edge : problem.nodes.get(lastEdge.node2)) {
+				if(!problem.fixed.contains(edge) && edge != lastEdge  && !problem.unselected.contains(edge))
+					possilbeEdges.add(edge);
+			}
+		}
+
+		if(possilbeEdges.isEmpty())
+			return null;
+
+		return possilbeEdges.first();
+	}
+
+	private int calcLowerBound(Problem problem){
 		//if(problem.nodes.size() < this.k || problem.edges.size()+1 < this.k) return Integer.MAX_VALUE;
 
 		if(problem.edges.size() < this.k-1) return Integer.MAX_VALUE;
 
 		int weight = 0;
 		Iterator<Edge> it = problem.edges.iterator();
+
+		for(int i = 0; i < this.k-1; i++) {
+			weight += it.next().weight;
+		}
+
+		return weight;
+	}
+
+	private int calcLowerBound(TreeSet<Edge> edges){
+		if(edges.size() < this.k-1) return Integer.MAX_VALUE;
+
+		int weight = 0;
+		Iterator<Edge> it = edges.iterator();
 
 		for(int i = 0; i < this.k-1; i++) {
 			weight += it.next().weight;
@@ -201,25 +243,14 @@ public class KMST extends AbstractKMST {
 		int lower = 0;
 		int upper = 0;
 
-		TreeSet<Integer> fixed = new TreeSet<Integer>();
+		TreeSet<Edge> unselected = new TreeSet<Edge>();
+		TreeSet<Edge> fixed = new TreeSet<Edge>();
 		TreeMap<Integer, TreeSet<Edge>> nodes;
 		TreeSet<Edge> edges;
 
-		public Problem(TreeSet<Edge> edges){
-			this.nodes = new TreeMap<Integer, TreeSet<Edge>>();
-			this.edges = new TreeSet<Edge>();
-
-			Iterator<Edge> edgeIterator = this.edges.iterator();
-			while(edgeIterator.hasNext()){
-				Edge edge = edgeIterator.next();
-
-				addNode(edge.node1,edge);
-				addNode(edge.node2,edge);
-			}
-		}
-
 		public Problem(Problem problem){
-			this.fixed = new TreeSet<Integer>(problem.fixed);
+			this.unselected = new TreeSet<Edge>(problem.unselected);
+			this.fixed = new TreeSet<Edge>(problem.fixed);
 			this.nodes = new TreeMap<Integer, TreeSet<Edge>>(problem.nodes);
 			this.edges = new TreeSet<Edge>(problem.edges);
 		}
@@ -255,6 +286,20 @@ public class KMST extends AbstractKMST {
 			return -1;
 		}
 
+		public void remove(Edge edge){
+			edges.remove(edge);
+
+			nodes.get(edge.node1).remove(edge);
+
+			if(nodes.get(edge.node1).isEmpty())
+				nodes.remove(edge.node1);
+
+			nodes.get(edge.node2).remove(edge);
+
+			if(nodes.get(edge.node2).isEmpty())
+				nodes.remove(edge.node2);
+		}
+
 		public void removeNode(int node) {
 
 			TreeSet<Edge> nodeEdges = nodes.get(node);
@@ -273,6 +318,15 @@ public class KMST extends AbstractKMST {
 						nEdges.remove(edge);
 				}
 			}*/
+		}
+
+		public Edge getFreeEdge(){
+			for(Edge edge: this.edges){
+				if(!this.fixed.contains(edge))
+					return edge;
+			}
+
+			return null;
 		}
 	}
 }
