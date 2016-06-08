@@ -57,10 +57,22 @@ public class KMST extends AbstractKMST {
 		subProblem.unselected.add(firstEdge);
 		bnb(subProblem,firstEdge);
 	}
+/*
+	private Edge getNextEdge(Edge lastEdge, TreeMap<Integer,TreeSet<Edge>> nodes, TreeSet<Edge> selected, TreeSet<Edge> unselected){
+		TreeSet<Edge> relevantEdges = new TreeSet<Edge>();
 
-	//private Edge getNextEdge();
+		for(Edge edge: nodes.get(lastEdge.node1)){
+			if(!unselected.contains(edge) && !selected.contains(edge) && lastEdge != edge)
+				relevantEdges.add(edge);
+		}
 
-	private void bnb(TreeSet<Edge> edges, TreeMap<Integer,TreeSet<Edge>> nodes, TreeSet<Edge> selected, TreeSet<Edge> unselected){
+		if(relevantEdges.isEmpty())
+			return null;
+
+		return relevantEdges.first();
+	}
+
+	private void bnb(TreeSet<Edge> edges, TreeMap<Integer,TreeSet<Edge>> nodes, TreeSet<Edge> selected, TreeSet<Edge> unselected, Edge lastEdge){
 		int localLowerBound = calcLowerBound(edges);
 
 		if(localLowerBound < this.getSolution().getUpperBound()){
@@ -76,10 +88,16 @@ public class KMST extends AbstractKMST {
 			}
 
 			if(localLowerBound < this.getSolution().getUpperBound()) {
-				//Edge nextEdge = getNextEdge();
+				Edge nextEdge = getNextEdge(lastEdge, nodes, selected, unselected);
+
+				if(nextEdge != null){
+					TreeSet<Edge>
+
+				}
 			}
 		}
 	}
+	*/
 
 	private void bnb(Problem problem, Edge lastEdge){
 		int localLowerBound = calcLowerBound(problem);
@@ -88,10 +106,6 @@ public class KMST extends AbstractKMST {
 			MST mst = prim(problem);
 
 			int localUpperBound = mst.weight;
-			/*if (localLowerBound == 0) {
-				problem.unselected.add(lastEdge);
-				return;
-			}*/
 
 			if (localUpperBound < this.getSolution().getUpperBound())
 				this.setSolution(localUpperBound, problem.edges);
@@ -117,7 +131,7 @@ public class KMST extends AbstractKMST {
 
 		if(problem.nodes.containsKey(lastEdge.node1)) {
 			for (Edge edge : problem.nodes.get(lastEdge.node1)) {
-				if(!problem.fixed.contains(edge) && !problem.unselected.contains(edge))
+				if(!problem.fixed.contains(edge) && !problem.unselected.contains(edge) && edge != lastEdge)
 					possilbeEdges.add(edge);
 			}
 		}
@@ -132,7 +146,7 @@ public class KMST extends AbstractKMST {
 		if(possilbeEdges.isEmpty())
 			return null;
 
-		return possilbeEdges.first();
+		return possilbeEdges.last();
 	}
 
 	private int calcLowerBound(Problem problem){
