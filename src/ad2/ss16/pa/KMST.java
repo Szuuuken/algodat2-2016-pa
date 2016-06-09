@@ -1,7 +1,5 @@
 package ad2.ss16.pa;
 
-import sun.reflect.generics.tree.Tree;
-
 import java.util.*;
 
 /**
@@ -11,9 +9,8 @@ import java.util.*;
 public class KMST extends AbstractKMST {
 	private int k;
 	private TreeSet<Edge> edges;
-	TreeSet<Edge> newSelectedEdges = new TreeSet<Edge>();
-	TreeSet<Integer> newSelectedNodes = new TreeSet<Integer>();
-
+	private TreeSet<Edge> selectedEdges = new TreeSet<Edge>();
+	TreeSet<Integer> selectedNodes = new TreeSet<Integer>();
 
 
 	/**
@@ -31,8 +28,12 @@ public class KMST extends AbstractKMST {
 	 */
 	public KMST(Integer numNodes, Integer numEdges, HashSet<Edge> edges, int k) {
 		this.k = k;
-		this.setSolution(Integer.MAX_VALUE,edges);
+
+
 		this.edges = new TreeSet<Edge>(edges);
+		MST mst = prim2(this.edges);
+		this.setSolution(mst.weight,mst.edges);
+		//this.edgeArray = this.edges.toArray(new Edge[this.edges.size()]);
 	}
 
 	/**
@@ -47,60 +48,81 @@ public class KMST extends AbstractKMST {
 	@Override
 	public void run() {
 		for(Edge edge: this.edges){
-			TreeSet<Edge> newSelectedEdges = new TreeSet<Edge>();
-			newSelectedEdges.add(edge);
-			TreeSet<Integer> newSelectedNodes = new TreeSet<Integer>();
-			newSelectedNodes.add(edge.node1);
-			newSelectedNodes.add(edge.node2);
+			this.selectedEdges.add(edge);
+			selectedNodes.add(edge.node1);
+			selectedNodes.add(edge.node2);
+			TreeSet<Edge> unselectedEdges = new TreeSet<Edge>();
 
-			branch(newSelectedEdges,newSelectedNodes,edge.weight);
+			branch(edge.weight,unselectedEdges, edge.node1 + "-" + edge.node2 +" ");
+			this.selectedEdges.remove(edge);
+			//unselectedEdges.add(edge);
 		}
 	}
 
-	private void branch(TreeSet<Edge> selectedEdges,TreeSet<Integer> selectedNodes,int currentWeight){
-		if(currentWeight < this.getSolution().getUpperBound()) {
-			MST mst = prim2(selectedEdges);
+	private void branch(int currentWeight, TreeSet<Edge> unselectedEdges, String code){
+		int localLowerBound = calcLowerBound(currentWeight,unselectedEdges);
+		//if (true) System.out.println(code + " \t " + localLowerBound + " \t " + currentWeight);
 
-			if (mst.weight < this.getSolution().getUpperBound()) {
+		if(localLowerBound >= this.getSolution().getUpperBound()){
+			return;
+		}
 
-				if (mst.size() == this.k) {
-					this.setSolution(mst.weight, mst.edges);
+		if(localLowerBound < this.getSolution().getUpperBound()) {
 
-				} else if (mst.size() < this.k) {
+			if (currentWeight < this.getSolution().getUpperBound()) {
+				if (selectedEdges.size() == this.k-1) {
+					this.setSolution(currentWeight, new HashSet<Edge>(selectedEdges));
 
+				} else if (selectedNodes.size() < this.k) {
 					for (Edge remainingEdge : this.edges) {
-						/*if (selectedNodes.contains(remainingEdge.node1) ^ selectedNodes.contains(remainingEdge.node2)) {
 
-							selectedEdges.add(remainingEdge);
-							selectedNodes.add(remainingEdge.node1);
-							selectedNodes.add(remainingEdge.node2);
+						if ((this.selectedNodes.contains(remainingEdge.node1) != this.selectedNodes.contains(remainingEdge.node2)) ) {
 
-							branch(selectedEdges, selectedNodes, currentWeight + remainingEdge.weight);
-							selectedEdges.remove(remainingEdge);
-							selectedNodes.remove(remainingEdge.node1);
-							selectedNodes.remove(remainingEdge.node2);
-						}*/
-						if(selectedNodes.contains(remainingEdge.node1) && !selectedNodes.contains(remainingEdge.node2)){
-							selectedEdges.add(remainingEdge);
-							selectedNodes.add(remainingEdge.node2);
+							if(currentWeight + remainingEdge.weight >= this.getSolution().getUpperBound())
+								return;
 
-							branch(selectedEdges, selectedNodes, currentWeight + remainingEdge.weight);
-							selectedEdges.remove(remainingEdge);
-							selectedNodes.remove(remainingEdge.node2);
+							int node;
 
-						} else if(!selectedNodes.contains(remainingEdge.node1) && selectedNodes.contains(remainingEdge.node2)){
-							selectedEdges.add(remainingEdge);
-							selectedNodes.add(remainingEdge.node1);
+							if(this.selectedNodes.contains(remainingEdge.node1))
+								node = remainingEdge.node2;
+							else
+								node = remainingEdge.node1;
 
-							branch(selectedEdges, selectedNodes, currentWeight + remainingEdge.weight);
-							selectedEdges.remove(remainingEdge);
-							selectedNodes.remove(remainingEdge.node1);
+							this.selectedNodes.add(node);
+
+							this.selectedEdges.add(remainingEdge);
+
+							branch(currentWeight + remainingEdge.weight,unselectedEdges, code + remainingEdge.node1 + "-" + remainingEdge.node2 + " ");
+
+							unselectedEdges.add(remainingEdge);
+							this.selectedEdges.remove(remainingEdge);
+							this.selectedNodes.remove(node);
 						}
-
 					}
 				}
 			}
 		}
+	}
+
+	private int calcLowerBound(int currentWeight, TreeSet<Edge> unselectedEdges){
+		int weight = 0;
+		int count = 0;
+
+		Iterator<Edge> it = this.edges.iterator();
+		while(it.hasNext() && (selectedEdges.size()+count < this.k-1)){
+			Edge edge = it.next();
+
+			if(this.selectedNodes.contains(edge.node1) != this.selectedNodes.contains(edge.node2) && !unselectedEdges.contains(edge)){
+				weight+=edge.weight;
+				count++;
+			}else if(!this.selectedNodes.contains(edge.node1) && !this.selectedNodes.contains(edge.node2)  && !unselectedEdges.contains(edge)){
+				weight+= edge.weight;
+				count++;
+			}
+
+		}
+
+		return weight+currentWeight;
 	}
 
 	private MST prim2(TreeSet<Edge> edges){
@@ -109,16 +131,14 @@ public class KMST extends AbstractKMST {
 		mstNodes.add(edges.first().node1);
 
 		return prim2(edges,mstSetup,mstNodes,0);
-
 	}
 
 	private MST prim2(TreeSet<Edge> edges, TreeSet<Edge> mst, TreeSet<Integer> mstNodes,int weight){
-
 		Edge minEdge = null;
 		int minWeight = Integer.MAX_VALUE;
 
 		for(Edge edge : edges){
-			if((mstNodes.contains(edge.node1) ^ mstNodes.contains(edge.node2)) && edge.weight < minWeight){
+			if((mstNodes.contains(edge.node1) != mstNodes.contains(edge.node2)) && edge.weight < minWeight){
 				minEdge = edge;
 				minWeight = edge.weight;
 			}
@@ -148,10 +168,6 @@ public class KMST extends AbstractKMST {
 		private MST(TreeSet<Edge> edges, int weight) {
 			this.weight = weight;
 			this.edges = edges;
-		}
-
-		public int size(){
-			return edges.size()+1;
 		}
 	}
 }
