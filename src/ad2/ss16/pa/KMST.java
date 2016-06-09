@@ -73,49 +73,6 @@ public class KMST extends AbstractKMST {
 				bnb(subProblem);
 			}
 		}
-
-		/*
-		TreeSet<Integer> nodes = new TreeSet<Integer>();
-		TreeSet<Edge> edges = new TreeSet<Edge>();
-
-		for(int node : mainProblem.nodes.keySet()){
-			nodes.add(node);
-
-			for(Edge edge: mainProblem.nodes.get(node)){
-				if(nodes.contains(edge.node1) ^ nodes.contains(edge.node2)){
-					edges.add(edge);
-					nodes.add(edge.node1);
-					nodes.add(edge.node2);
-					break;
-				}
-			}
-		}
-
-		TreeSet<Edge> edges2 = new TreeSet<Edge>(edges);
-
-		while(!edges2.isEmpty()){
-			Edge polled = edges2.pollFirst();
-			bnb(edges,);
-		}
-
-
-		Edge first = mainProblem.edges.first();
-		TreeSet<Edge> connectedEdges = getNextEdges(first);
-
-		Problem subProblem = new Problem();
-		while(subProblem.nodes.size() <) {
-			for (Edge edge : connectedEdges) {
-
-				subProblem.addNode(edge.node1, edge);
-				subProblem.addNode(edge.node2, edge);
-
-				bnb(subProblem);
-
-			/*Problem prob = new Problem();
-			prob.unselected.add(edge);
-			bnb(prob);*/
-			/*}
-		}*/
 	}
 
 
@@ -139,6 +96,8 @@ public class KMST extends AbstractKMST {
 
 			if (localLowerBound < this.getSolution().getUpperBound() && problem.nodes.size() <= this.k) {
 				for(Edge edge : getNextEdges(problem)){
+
+
 
 					Problem subProblem = new Problem(problem);
 					subProblem.addNode(edge.node1,edge);
@@ -200,11 +159,16 @@ public class KMST extends AbstractKMST {
 		//if(problem.edges.size() < this.k-1) return Integer.MAX_VALUE;
 
 		int weight = 0;
-		Iterator<Edge> it = problem.edges.iterator();
+		int count = 0;
+		Iterator<Edge> it = mainProblem.edges.iterator();
 
-		for(int i = 0; i < this.k-1; i++) {
-			if(it.hasNext())
-				weight += it.next().weight;
+		while(it.hasNext() && count < this.k) {
+			Edge edge = it.next();
+			if(!problem.unselected.contains(edge)){
+				count++;
+				weight+=edge.weight;
+			}
+
 		}
 
 		return weight;
