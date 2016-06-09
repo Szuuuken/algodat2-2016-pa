@@ -37,17 +37,6 @@ public class KMST extends AbstractKMST {
 		for(Edge edge: edges){
 			this.mainProblem.addNode(edge.node1,edge);
 			this.mainProblem.addNode(edge.node2,edge);
-
-			/*if(!al.containsKey(edge.node1)) {
-				al.put(edge.node1,new TreeSet<Integer>());
-			}
-
-			if(!al.containsKey(edge.node2)) {
-				al.put(edge.node2,new TreeSet<Integer>());
-			}
-
-			al.get(edge.node1).add(edge.node2);
-			al.get(edge.node2).add(edge.node1);*/
 		}
 	}
 
@@ -63,42 +52,71 @@ public class KMST extends AbstractKMST {
 	@Override
 	public void run() {
 		for(Edge edge: mainProblem.edges){
-			Problem subProblem = new Problem();
+			TreeSet<Edge> newSelectedEdges = new TreeSet<Edge>();
+			newSelectedEdges.add(edge);
+			TreeSet<Integer> newSelectedNodes = new TreeSet<Integer>();
+			newSelectedNodes.add(edge.node1);
+			newSelectedNodes.add(edge.node2);
+
+			branch(newSelectedEdges,newSelectedNodes,edge.weight);
+
+
+			/*Problem subProblem = new Problem();
 			subProblem.addNode(edge.node1,edge);
 			subProblem.addNode(edge.node2,edge);
+			bnb(subProblem);*/
 
-			for(Edge connectedEdge: getNextEdges(edge)){
+			/*for(Edge connectedEdge: getNextEdges(edge)){
 				subProblem.addNode(connectedEdge.node1,connectedEdge);
 				subProblem.addNode(connectedEdge.node2,connectedEdge);
-				bnb(subProblem);
-			}
+
+			}*/
 		}
 	}
 
+
+	private void branch(TreeSet<Edge> selectedEdges,TreeSet<Integer> selectedNodes,int currentWeight){
+		if(currentWeight < this.getSolution().getUpperBound()) {
+			MST mst = prim2(selectedEdges);
+
+			if (mst.size() == this.k) {
+				this.setSolution(mst.weight,mst.edges);
+			} else if(mst.size() < this.k){
+				TreeSet<Edge> newSelectedEdges = new TreeSet<Edge>(selectedEdges);
+				TreeSet<Integer> newSelectedNodes = new TreeSet<Integer>(selectedNodes);
+
+				for (Edge remainingEdge : mainProblem.edges) {
+					if (selectedNodes.contains(remainingEdge.node1) ^ selectedNodes.contains(remainingEdge.node2)) {
+						newSelectedEdges.add(remainingEdge);
+						newSelectedNodes.add(remainingEdge.node1);
+						newSelectedNodes.add(remainingEdge.node2);
+
+						branch(newSelectedEdges, newSelectedNodes, currentWeight + remainingEdge.weight);
+					}
+				}
+			}
+		}
+	}
 
 	private void bnb(Problem problem){
 		int localLowerBound = calcLowerBound(problem);
 
 		if(localLowerBound < this.getSolution().getUpperBound()) {
 			TreeSet<Edge> edges = new TreeSet<Edge>(problem.edges);
-			TreeSet<Edge> mstSetup = new TreeSet<Edge>();
-			TreeSet<Integer> mstNodes = new TreeSet<Integer>();
-			mstNodes.add(problem.edges.first().node1);
 
-			MST mst = prim2(edges,mstSetup,mstNodes,0);
+			edges.addAll(getNextEdges(problem));
+
+			MST mst = prim2(edges);
 
 			int localUpperBound = mst.weight;
 			if(localUpperBound == 0)
 				return;
 
-			if (localUpperBound < this.getSolution().getUpperBound() && problem.nodes.size() >= this.k)
+			if (localUpperBound < this.getSolution().getUpperBound() && mst.size() == this.k)
 				this.setSolution(localUpperBound, mst.edges);
 
 			if (localLowerBound < this.getSolution().getUpperBound() && problem.nodes.size() <= this.k) {
 				for(Edge edge : getNextEdges(problem)){
-
-
-
 					Problem subProblem = new Problem(problem);
 					subProblem.addNode(edge.node1,edge);
 					subProblem.addNode(edge.node2,edge);
@@ -107,14 +125,6 @@ public class KMST extends AbstractKMST {
 					Problem prob = new Problem(problem);
 					prob.unselected.add(edge);
 					bnb(prob);
-
-					/*subProblem.remove(edge);
-					subProblem.unselected.add(edge);
-					bnb(subProblem);
-
-					Problem prob = new Problem(problem);
-					prob.fixed.add(edge);
-					bnb(prob);*/
 				}
 			}
 		}
@@ -129,8 +139,8 @@ public class KMST extends AbstractKMST {
 		for(Edge edge : mainProblem.edges){
 			if(connectedNodes.contains(edge.node1) ^ connectedNodes.contains(edge.node2)){
 				connectedEdges.add(edge);
-				connectedNodes.add(edge.node1);
-				connectedNodes.add(edge.node2);
+				//connectedNodes.add(edge.node1);
+				//connectedNodes.add(edge.node2);
 
 			}
 		}
@@ -139,14 +149,19 @@ public class KMST extends AbstractKMST {
 	}
 
 	private TreeSet<Edge> getNextEdges(Problem problem){
+		TreeSet<Edge> remainingNodes = new TreeSet<Edge>(mainProblem.edges);
 		TreeSet<Integer> connectedNodes = new TreeSet<Integer>(problem.nodes.keySet());
 		TreeSet<Edge> connectedEdges = new TreeSet<Edge>();
+		remainingNodes.removeAll(problem.edges);
+		remainingNodes.removeAll(problem.unselected);
 
-		for(Edge edge: mainProblem.edges){
+		for(Edge edge: remainingNodes){
 			if(connectedNodes.contains(edge.node1) ^ connectedNodes.contains(edge.node2) && !problem.unselected.contains(edge)){
 				connectedEdges.add(edge);
 				connectedNodes.add(edge.node1);
 				connectedNodes.add(edge.node2);
+				if(connectedNodes.size() == this.k)
+					break;
 			}
 		}
 
@@ -162,7 +177,7 @@ public class KMST extends AbstractKMST {
 		int count = 0;
 		Iterator<Edge> it = mainProblem.edges.iterator();
 
-		while(it.hasNext() && count < this.k) {
+		while(it.hasNext() && count < this.k-1) {
 			Edge edge = it.next();
 			if(!problem.unselected.contains(edge)){
 				count++;
@@ -185,6 +200,15 @@ public class KMST extends AbstractKMST {
 		}
 
 		return weight;
+	}
+
+	private MST prim2(TreeSet<Edge> edges){
+		TreeSet<Edge> mstSetup = new TreeSet<Edge>();
+		TreeSet<Integer> mstNodes = new TreeSet<Integer>();
+		mstNodes.add(edges.first().node1);
+
+		return prim2(edges,mstSetup,mstNodes,0);
+
 	}
 
 	private MST prim2(TreeSet<Edge> edges, TreeSet<Edge> mst, TreeSet<Integer> mstNodes,int weight){
