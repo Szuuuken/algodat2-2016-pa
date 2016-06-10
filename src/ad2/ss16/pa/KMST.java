@@ -61,6 +61,7 @@ public class KMST extends AbstractKMST {
 
 	private void branch(int currentWeight, TreeSet<Edge> unselectedEdges, String code){
 		int localLowerBound = calcLowerBound(currentWeight,unselectedEdges);
+
 		//if (true) System.out.println(code + " \t " + localLowerBound + " \t " + currentWeight);
 
 		if(localLowerBound >= this.getSolution().getUpperBound()){
@@ -92,7 +93,8 @@ public class KMST extends AbstractKMST {
 
 							this.selectedEdges.add(remainingEdge);
 
-							branch(currentWeight + remainingEdge.weight,unselectedEdges, code + remainingEdge.node1 + "-" + remainingEdge.node2 + " ");
+
+							branch(currentWeight + remainingEdge.weight, unselectedEdges, code + remainingEdge.node1 + "-" + remainingEdge.node2 + " ");
 
 							unselectedEdges.add(remainingEdge);
 							this.selectedEdges.remove(remainingEdge);
