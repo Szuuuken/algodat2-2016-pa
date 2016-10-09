@@ -5,7 +5,7 @@ Eine vorläufige Analyse hat ergeben, dass eine Verteilung auf `k` verschiedene 
 
 Nach kurzem Überlegen wird Ihnen klar, dass eine baumartige Vernetzung der Zentren die geringste Anzahl an Leitungen benötigt. Weiters wissen Sie, dass Ihr Auftraggeber die Kosten für den Bau eines Datenzentrums an jedem Standort als ident einschätzt. Aufgrund dieser Annahmen kann nur ein Baum die geringsten Kosten verursachen, da sonst immer eine Verbindung eingespart werden könnte.
 
-Als guter Algorithmiker erkennen Sie sofort, dass es sich um eine Generalisierung des **Minimum Spanning Tree Problems (MST)** handelt, welches nicht alle Knoten eines Graphen berücksichtigt, sondern nur eine zu treffende Auswahl von **k** Knoten. Dieses Problem ist als **k-Minimum Spanning Tree Problem (k-MST)* *** bekannt.
+Als guter Algorithmiker erkennen Sie sofort, dass es sich um eine Generalisierung des **Minimum Spanning Tree Problems (MST)** handelt, welches nicht alle Knoten eines Graphen berücksichtigt, sondern nur eine zu treffende Auswahl von **k** Knoten. Dieses Problem ist als **k-Minimum Spanning Tree Problem (k-MST)** bekannt.
 
 Sie können Ihr Problem folgendermaßen definieren:
 Gegeben sei ein gewichteter Graph `G = (V, E)` mit einer Kostenfunktion `c : E → ℝ` die jeder Kante Kosten zuordnet und ein zusätzlicher Parameter `k`. Es soll nun ein zusammenhängender Teilbaum minimalen Gewichts (Kantensumme) mit genau `k` Knoten aus `V` gefunden werden.
